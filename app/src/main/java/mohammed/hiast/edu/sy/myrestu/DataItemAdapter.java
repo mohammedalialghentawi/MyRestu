@@ -1,6 +1,7 @@
 package mohammed.hiast.edu.sy.myrestu;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -18,10 +19,10 @@ import mohammed.hiast.edu.sy.myrestu.model.DataItem;
 
 public class DataItemAdapter extends RecyclerView.Adapter<DataItemAdapter.ViewHolder> {
 
-    public static final String ITEM_ID ="ITEM_ID" ;
     public static final String ITEM_KEY ="ITEM_KEY" ;
     private List<DataItem> mItems;
     private Context mContext;
+    public static final String ITEM_ID ="ITEM_ID" ;
 
     public DataItemAdapter(Context context, List<DataItem> items) {
         this.mContext = context;
@@ -51,9 +52,14 @@ public class DataItemAdapter extends RecyclerView.Adapter<DataItemAdapter.ViewHo
         }
 
         holder.mView.setOnClickListener(new View.OnClickListener() {
+
+
             @Override
             public void onClick(View v) {
-                Toast.makeText(mContext, "you click " + item.getItemName(), Toast.LENGTH_SHORT).show();
+                //Toast.makeText(mContext, "you click " + item.getItemName(), Toast.LENGTH_SHORT).show();
+                Intent intent  = new Intent(mContext,DetailActivity.class);
+                intent.putExtra(ITEM_ID,item);
+                mContext.startActivity(intent);
             }
         });
 

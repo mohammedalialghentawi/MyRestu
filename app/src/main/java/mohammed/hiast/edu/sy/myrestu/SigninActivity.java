@@ -1,6 +1,7 @@
 package mohammed.hiast.edu.sy.myrestu;
 
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
@@ -10,10 +11,13 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import static mohammed.hiast.edu.sy.myrestu.MainActivity.MY_EMAIL_PREFS;
+import static mohammed.hiast.edu.sy.myrestu.MainActivity.MY_GLOBAL_PREFS;
+
 /**
  * A login screen that offers login via email/password.
  */
-public class SigninActivity extends AppCompatActivity  {
+public class SigninActivity extends AppCompatActivity {
 
     public static final String EMAIL_KEY = "email_key";
     // UI references.
@@ -26,6 +30,16 @@ public class SigninActivity extends AppCompatActivity  {
         setContentView(R.layout.activity_signin);
         mEmailView = (TextView) findViewById(R.id.email);
         mPasswordView = (EditText) findViewById(R.id.password);
+
+
+        SharedPreferences prefs =
+                getSharedPreferences(MY_GLOBAL_PREFS , MODE_PRIVATE);
+        String email = prefs.getString(MY_EMAIL_PREFS , "");
+
+        mEmailView.setText(email);
+
+
+
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
         mEmailSignInButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -83,5 +97,5 @@ public class SigninActivity extends AppCompatActivity  {
     private boolean isPasswordValid(String password) {
         return password.length() > 4;
     }
-
 }
+

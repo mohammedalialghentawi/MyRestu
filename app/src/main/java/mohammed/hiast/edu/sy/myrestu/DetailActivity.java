@@ -1,5 +1,6 @@
 package mohammed.hiast.edu.sy.myrestu;
 
+
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -25,7 +26,7 @@ public class DetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        DataItem item = getIntent().getExtras().getParcelable(DataItemAdapter.ITEM_KEY);
+        DataItem item = getIntent().getExtras().getParcelable(DataItemAdapter.ITEM_ID);
         if (item == null) {
             throw new AssertionError("Null data item received!");
         }
