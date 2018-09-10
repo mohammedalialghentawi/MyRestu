@@ -1,8 +1,12 @@
 package mohammed.hiast.edu.sy.myrestu;
 
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,5 +34,32 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = (RecyclerView) findViewById(R.id.rvItems);
 
         recyclerView.setAdapter(adapter);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //getMenuInflater().inflate(R.menu.main_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        /*switch (item.getItemId()) {
+            case R.id.signin_action:
+                Intent intent = new Intent(this, SigninActivity.class);
+                startActivityForResult(intent, SIGNIN_REQUEST);
+        }*/
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+       /* if (resultCode == RESULT_OK && requestCode == SIGNIN_REQUEST) {
+            String email = data.getStringExtra(SigninActivity.EMAIL_KEY);
+            Toast.makeText(this, "You signed in as " + email, Toast.LENGTH_SHORT).show();
+        }*/
+
     }
 }
