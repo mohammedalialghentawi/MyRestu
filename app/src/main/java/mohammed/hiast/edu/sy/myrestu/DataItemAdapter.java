@@ -2,8 +2,11 @@ package mohammed.hiast.edu.sy.myrestu;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
+import android.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +26,7 @@ public class DataItemAdapter extends RecyclerView.Adapter<DataItemAdapter.ViewHo
     private List<DataItem> mItems;
     private Context mContext;
     public static final String ITEM_ID ="ITEM_ID" ;
+    private SharedPreferences.OnSharedPreferenceChangeListener changeListener;
 
     public DataItemAdapter(Context context, List<DataItem> items) {
         this.mContext = context;
@@ -32,7 +36,25 @@ public class DataItemAdapter extends RecyclerView.Adapter<DataItemAdapter.ViewHo
     @Override
     public DataItemAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(mContext);
-        View itemView = inflater.inflate(R.layout.list_item, parent, false);
+
+
+        SharedPreferences settings =
+                PreferenceManager.getDefaultSharedPreferences(mContext);
+
+        boolean isGrid =
+                settings.getBoolean(
+                        mContext.getString(R.string.display_in_grid_pref),false);
+
+        int layout = isGrid ? R.layout.grid_layout: R.layout.list_item;
+
+        changeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                Log.i("Prefernces" , "Prefernce Change item : "+ key);
+            }
+        };
+        settings.registerOnSharedPreferenceChangeListener(changeListener);
+        View itemView = inflater.inflate(layout, parent, false);
         ViewHolder viewHolder = new ViewHolder(itemView);
         return viewHolder;
     }
