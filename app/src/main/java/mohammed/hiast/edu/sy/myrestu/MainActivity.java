@@ -9,6 +9,7 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -17,6 +18,10 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -38,10 +43,32 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private boolean permissionGranted;
 
+    ListView mDrawerList;
+    DrawerLayout mDrawerLayout;
+    String[] mCategories;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //      Code to manage sliding navigation drawer
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mCategories = getResources().getStringArray(R.array.categories);
+        mDrawerList = (ListView) findViewById(R.id.left_drawer);
+        mDrawerList.setAdapter(new ArrayAdapter<>(this,
+                R.layout.drawer_list_item, mCategories));
+        mDrawerList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String category = mCategories[position];
+                Toast.makeText(MainActivity.this, "You chose " + category,
+                        Toast.LENGTH_SHORT).show();
+                mDrawerLayout.closeDrawer(mDrawerList);
+            }
+        });
+//      end of navigation drawer
+
         Collections.sort(dataItemList, new Comparator<DataItem>() {
             @Override
             public int compare(DataItem o1, DataItem o2) {
@@ -105,6 +132,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                     return true;
                 }
+            case R.id.action_all_items:
+                // display all items
+                return true;
+            case R.id.action_choose_category:
+                //open the drawer
+                mDrawerLayout.openDrawer(mDrawerList);
+                return true;
 
         }
         return super.onOptionsItemSelected(item);
