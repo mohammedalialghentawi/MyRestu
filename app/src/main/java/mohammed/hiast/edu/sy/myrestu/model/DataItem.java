@@ -1,10 +1,13 @@
 package mohammed.hiast.edu.sy.myrestu.model;
 
 
+import android.content.ContentValues;
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import java.util.UUID;
+
+import mohammed.hiast.edu.sy.myrestu.database.ItemsTable;
 
 /**
  * Created by Mohammed on 05/09/2018.
@@ -23,9 +26,7 @@ public class DataItem implements Parcelable {
     }
 
     public DataItem(String itemId, String itemName, String category, String description, int sortPosition, double price, String image) {
-        if (itemId == null) {
-            itemId = UUID.randomUUID().toString();
-        }
+
         this.itemId = itemId;
         this.itemName = itemName;
         this.description = description;
@@ -104,6 +105,20 @@ public class DataItem implements Parcelable {
                 '}';
     }
 
+    public ContentValues toValues(){
+        ContentValues values = new ContentValues(7);
+
+        values.put(ItemsTable.COLUMN_ID,itemId);
+        values.put(ItemsTable.COLUMN_NAME,itemName);
+        values.put(ItemsTable.COLUMN_PRICE,price);
+        values.put(ItemsTable.COLUMN_POSITION,sortPosition);
+        values.put(ItemsTable.COLUMN_IMAGE,image);
+        values.put(ItemsTable.COLUMN_DESCRIPTION,description);
+        values.put(ItemsTable.COLUMN_CATEGORY,category);
+
+
+        return values;
+    }
 
     @Override
     public int describeContents() {

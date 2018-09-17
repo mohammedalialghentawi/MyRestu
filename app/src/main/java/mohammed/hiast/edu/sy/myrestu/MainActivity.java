@@ -4,6 +4,9 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -30,6 +33,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import mohammed.hiast.edu.sy.myrestu.Sample.SampleDataProvider;
+import mohammed.hiast.edu.sy.myrestu.database.DBHelper;
+import mohammed.hiast.edu.sy.myrestu.database.DataSource;
 import mohammed.hiast.edu.sy.myrestu.model.DataItem;
 import mohammed.hiast.edu.sy.myrestu.utils.JSONHelper;
 
@@ -46,12 +51,22 @@ public class MainActivity extends AppCompatActivity {
     ListView mDrawerList;
     DrawerLayout mDrawerLayout;
     String[] mCategories;
+    
 
+    DataSource mDataSource;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mDataSource = new DataSource(this);
+        mDataSource.open();
+
+
+
+        mDataSource.seedData(dataItemList);
+
+        Toast.makeText(this, "Database acquired !", Toast.LENGTH_SHORT).show();
         //      Code to manage sliding navigation drawer
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mCategories = getResources().getStringArray(R.array.categories);
@@ -64,20 +79,20 @@ public class MainActivity extends AppCompatActivity {
                 String category = mCategories[position];
                 Toast.makeText(MainActivity.this, "You chose " + category,
                         Toast.LENGTH_SHORT).show();
+                displayAllData(category);
                 mDrawerLayout.closeDrawer(mDrawerList);
             }
         });
 //      end of navigation drawer
 
-        Collections.sort(dataItemList, new Comparator<DataItem>() {
+
+       /* Collections.sort(dataItemList, new Comparator<DataItem>() {
             @Override
             public int compare(DataItem o1, DataItem o2) {
                 return o1.getItemName().compareTo(o2.getItemName());
             }
-        });
+        });*/
 
-
-        DataItemAdapter adapter = new DataItemAdapter(this,dataItemList);
 
         SharedPreferences settings =
                 PreferenceManager.getDefaultSharedPreferences(this);
@@ -93,7 +108,28 @@ public class MainActivity extends AppCompatActivity {
             recyclerView.setLayoutManager(
                     new GridLayoutManager(this,3));
         }
+        displayAllData(null);
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mDataSource.open();
+    }
+
+    private void displayAllData(String category){
+        List<DataItem> mList = mDataSource.getAllDataItems(category);
+
+        DataItemAdapter adapter = new DataItemAdapter(this,mList);
         recyclerView.setAdapter(adapter);
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mDataSource.close();
     }
 
     @Override
@@ -133,6 +169,7 @@ public class MainActivity extends AppCompatActivity {
                     return true;
                 }
             case R.id.action_all_items:
+                displayAllData(null);
                 // display all items
                 return true;
             case R.id.action_choose_category:
