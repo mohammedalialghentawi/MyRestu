@@ -1,7 +1,10 @@
 package mohammed.hiast.edu.sy.myrestu;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
@@ -12,6 +15,7 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -36,24 +40,40 @@ import mohammed.hiast.edu.sy.myrestu.Sample.SampleDataProvider;
 import mohammed.hiast.edu.sy.myrestu.database.DBHelper;
 import mohammed.hiast.edu.sy.myrestu.database.DataSource;
 import mohammed.hiast.edu.sy.myrestu.model.DataItem;
-import mohammed.hiast.edu.sy.myrestu.utils.JSONHelper;
+import mohammed.hiast.edu.sy.myrestu.services.MyService;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int SIGNIN_REQUEST =1001 ;
     public static final String MY_GLOBAL_PREFS ="My_prefernce" ;
     public static final String MY_EMAIL_PREFS ="email_preference" ;
+    public static final String JSON_URL=
+            "https://mohammed.ugar-it.com/services/json/itemsfeed.php";
+
     private static final int REQUEST_PERMISSION_WRITE = 1000;
     List<DataItem> dataItemList = SampleDataProvider.dataItemList;
     private RecyclerView recyclerView;
     private boolean permissionGranted;
 
+    boolean networkOk;
     ListView mDrawerList;
     DrawerLayout mDrawerLayout;
     String[] mCategories;
     
 
     DataSource mDataSource;
+
+    private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            DataItem[] dataItems = (DataItem[]) intent
+                    .getParcelableArrayExtra(MyService.MY_SERVICE_PAYLOAD);
+            Toast.makeText(MainActivity.this,
+                    "Received " + dataItems.length + " items from service",
+                    Toast.LENGTH_SHORT).show();
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,12 +81,9 @@ public class MainActivity extends AppCompatActivity {
 
         mDataSource = new DataSource(this);
         mDataSource.open();
-
-
-
         mDataSource.seedData(dataItemList);
 
-        Toast.makeText(this, "Database acquired !", Toast.LENGTH_SHORT).show();
+
         //      Code to manage sliding navigation drawer
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mCategories = getResources().getStringArray(R.array.categories);
@@ -83,15 +100,7 @@ public class MainActivity extends AppCompatActivity {
                 mDrawerLayout.closeDrawer(mDrawerList);
             }
         });
-//      end of navigation drawer
-
-
-       /* Collections.sort(dataItemList, new Comparator<DataItem>() {
-            @Override
-            public int compare(DataItem o1, DataItem o2) {
-                return o1.getItemName().compareTo(o2.getItemName());
-            }
-        });*/
+        //      end of navigation drawer
 
 
         SharedPreferences settings =
@@ -101,14 +110,16 @@ public class MainActivity extends AppCompatActivity {
                 settings.getBoolean(
                         getString(R.string.display_in_grid_pref),false);
 
-
-
         recyclerView = (RecyclerView) findViewById(R.id.rvItems);
         if(isGrid){
             recyclerView.setLayoutManager(
                     new GridLayoutManager(this,3));
         }
         displayAllData(null);
+
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(MyService.MY_SERVICE_MESSAGE));
 
     }
 
@@ -120,7 +131,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void displayAllData(String category){
         List<DataItem> mList = mDataSource.getAllDataItems(category);
-
         DataItemAdapter adapter = new DataItemAdapter(this,mList);
         recyclerView.setAdapter(adapter);
 
@@ -130,6 +140,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         mDataSource.close();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .unregisterReceiver(mBroadcastReceiver);
     }
 
     @Override
@@ -151,23 +168,7 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(this,PrefsActivity.class);
                 startActivity(intent);
                 return true;
-            case R.id.export_to_json_action: {
-                boolean result = JSONHelper.exportToJson(this, dataItemList);
-                if (result) {
-                    Toast.makeText(this, "File Exported", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "File NOT Exported", Toast.LENGTH_SHORT).show();
-                }
-                return true;
-            }
-                case R.id.import_from_json_action:{
-                    List<DataItem> importedList = JSONHelper.importFromJson(this);
 
-                    for (DataItem ite:importedList  ) {
-                        Log.i(JSONHelper.TAG,ite.getItemName());
-                    }
-                    return true;
-                }
             case R.id.action_all_items:
                 displayAllData(null);
                 // display all items
@@ -199,56 +200,5 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    /* Checks if external storage is available for read and write */
-    public boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        return Environment.MEDIA_MOUNTED.equals(state);
-    }
 
-    /* Checks if external storage is available to at least read */
-    public boolean isExternalStorageReadable() {
-        String state = Environment.getExternalStorageState();
-        return (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state));
-    }
-
-    // Initiate request for permissions.
-    private boolean checkPermissions() {
-
-        if (!isExternalStorageReadable() || !isExternalStorageReadable()) {
-            Toast.makeText(this, "This app only works on devices with usable external storage",
-                    Toast.LENGTH_SHORT).show();
-            return false;
-        }
-
-        int permissionCheck = ContextCompat.checkSelfPermission(this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                    REQUEST_PERMISSION_WRITE);
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    // Handle permissions result
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String permissions[],
-                                           @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_PERMISSION_WRITE:
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    permissionGranted = true;
-                    Toast.makeText(this, "External storage permission granted",
-                            Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(this, "You must grant permission!", Toast.LENGTH_SHORT).show();
-                }
-                break;
-        }
-    }
 }
