@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -32,6 +33,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -41,6 +43,7 @@ import mohammed.hiast.edu.sy.myrestu.database.DBHelper;
 import mohammed.hiast.edu.sy.myrestu.database.DataSource;
 import mohammed.hiast.edu.sy.myrestu.model.DataItem;
 import mohammed.hiast.edu.sy.myrestu.services.MyService;
+import mohammed.hiast.edu.sy.myrestu.utils.NetworkHelper;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -59,15 +62,21 @@ public class MainActivity extends AppCompatActivity {
     ListView mDrawerList;
     DrawerLayout mDrawerLayout;
     String[] mCategories;
-    
 
-    DataSource mDataSource;
+
+
+    //DataSource mDataSource;
 
     private BroadcastReceiver mBroadcastReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             DataItem[] dataItems = (DataItem[]) intent
                     .getParcelableArrayExtra(MyService.MY_SERVICE_PAYLOAD);
+
+            dataItemList = Arrays.asList(dataItems);
+
+            displayAllData(null);
+
             Toast.makeText(MainActivity.this,
                     "Received " + dataItems.length + " items from service",
                     Toast.LENGTH_SHORT).show();
@@ -79,9 +88,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mDataSource = new DataSource(this);
-        mDataSource.open();
-        mDataSource.seedData(dataItemList);
+//        mDataSource = new DataSource(this);
+//        mDataSource.open();
+//        mDataSource.seedData(dataItemList);
 
 
         //      Code to manage sliding navigation drawer
@@ -115,31 +124,48 @@ public class MainActivity extends AppCompatActivity {
             recyclerView.setLayoutManager(
                     new GridLayoutManager(this,3));
         }
-        displayAllData(null);
+        //displayAllData(null);
 
         LocalBroadcastManager.getInstance(getApplicationContext())
                 .registerReceiver(mBroadcastReceiver,
                         new IntentFilter(MyService.MY_SERVICE_MESSAGE));
+
+        networkOk = NetworkHelper.hasAccessToNetwork(this);
+        if(networkOk){
+            Intent intetnMessage = new Intent
+                    (this,MyService.class);
+            intetnMessage.setData(Uri.parse(JSON_URL));
+            startService(intetnMessage);
+        }else{
+            Toast.makeText(this,
+                    "check your internet connection!!", Toast.LENGTH_SHORT).show();
+        }
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mDataSource.open();
+        //mDataSource.open();
     }
 
     private void displayAllData(String category){
-        List<DataItem> mList = mDataSource.getAllDataItems(category);
-        DataItemAdapter adapter = new DataItemAdapter(this,mList);
-        recyclerView.setAdapter(adapter);
+       //List<DataItem> mList = mDataSource.getAllDataItems(category);
+
+       List<DataItem> mList = dataItemList;
+        if (mList == null) {
+            Toast.makeText(this, "Data is null", Toast.LENGTH_SHORT).show();
+            return;
+        }
+       DataItemAdapter adapter = new DataItemAdapter(this,mList);
+       recyclerView.setAdapter(adapter);
 
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mDataSource.close();
+       // mDataSource.close();
     }
 
     @Override

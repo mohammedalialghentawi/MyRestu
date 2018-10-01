@@ -42,6 +42,7 @@ public class DataSource {
     public long getDataItemsCount(){
         return DatabaseUtils.queryNumEntries(mDatabase,ItemsTable.TABLE_ITEMS);
     }
+
     public  void seedData(List<DataItem> dataItemList){
         if(getDataItemsCount()==0){
             for (DataItem item: dataItemList) {
