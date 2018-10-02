@@ -10,12 +10,17 @@ import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -37,6 +42,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 import mohammed.hiast.edu.sy.myrestu.Sample.SampleDataProvider;
 import mohammed.hiast.edu.sy.myrestu.database.DBHelper;
@@ -45,7 +51,7 @@ import mohammed.hiast.edu.sy.myrestu.model.DataItem;
 import mohammed.hiast.edu.sy.myrestu.services.MyService;
 import mohammed.hiast.edu.sy.myrestu.utils.NetworkHelper;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Map<String, Bitmap>> {
 
     private static final int SIGNIN_REQUEST =1001 ;
     public static final String MY_GLOBAL_PREFS ="My_prefernce" ;
@@ -54,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
             "https://mohammed.ugar-it.com/services/json/itemsfeed.php";
 
     private static final int REQUEST_PERMISSION_WRITE = 1000;
-    List<DataItem> dataItemList = SampleDataProvider.dataItemList;
+    List<DataItem> dataItemList;
     private RecyclerView recyclerView;
     private boolean permissionGranted;
 
@@ -73,13 +79,15 @@ public class MainActivity extends AppCompatActivity {
             DataItem[] dataItems = (DataItem[]) intent
                     .getParcelableArrayExtra(MyService.MY_SERVICE_PAYLOAD);
 
+            Toast.makeText(MainActivity.this,
+                    "Received " + dataItems.length + " items from service",
+                    Toast.LENGTH_SHORT).show();
+
             dataItemList = Arrays.asList(dataItems);
 
             displayAllData(null);
 
-            Toast.makeText(MainActivity.this,
-                    "Received " + dataItems.length + " items from service",
-                    Toast.LENGTH_SHORT).show();
+
         }
     };
 
@@ -87,11 +95,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-//        mDataSource = new DataSource(this);
-//        mDataSource.open();
-//        mDataSource.seedData(dataItemList);
-
 
         //      Code to manage sliding navigation drawer
         mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -124,11 +127,6 @@ public class MainActivity extends AppCompatActivity {
             recyclerView.setLayoutManager(
                     new GridLayoutManager(this,3));
         }
-        //displayAllData(null);
-
-        LocalBroadcastManager.getInstance(getApplicationContext())
-                .registerReceiver(mBroadcastReceiver,
-                        new IntentFilter(MyService.MY_SERVICE_MESSAGE));
 
         networkOk = NetworkHelper.hasAccessToNetwork(this);
         if(networkOk){
@@ -141,23 +139,27 @@ public class MainActivity extends AppCompatActivity {
                     "check your internet connection!!", Toast.LENGTH_SHORT).show();
         }
 
+        LocalBroadcastManager.getInstance(getApplicationContext())
+                .registerReceiver(mBroadcastReceiver,
+                        new IntentFilter(MyService.MY_SERVICE_MESSAGE));
+
+
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        //mDataSource.open();
     }
 
     private void displayAllData(String category){
        //List<DataItem> mList = mDataSource.getAllDataItems(category);
 
-       List<DataItem> mList = dataItemList;
-        if (mList == null) {
+        if (dataItemList == null) {
             Toast.makeText(this, "Data is null", Toast.LENGTH_SHORT).show();
             return;
         }
-       DataItemAdapter adapter = new DataItemAdapter(this,mList);
+       DataItemAdapter adapter = new DataItemAdapter(this,dataItemList);
        recyclerView.setAdapter(adapter);
 
     }
@@ -165,7 +167,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         super.onPause();
-       // mDataSource.close();
     }
 
     @Override
@@ -197,10 +198,8 @@ public class MainActivity extends AppCompatActivity {
 
             case R.id.action_all_items:
                 displayAllData(null);
-                // display all items
                 return true;
             case R.id.action_choose_category:
-                //open the drawer
                 mDrawerLayout.openDrawer(mDrawerList);
                 return true;
 
@@ -226,5 +225,40 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @NonNull
+    @Override
+    public Loader<Map<String, Bitmap>> onCreateLoader(int i, @Nullable Bundle bundle) {
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Map<String, Bitmap>> loader, Map<String, Bitmap> stringBitmapMap) {
+
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Map<String, Bitmap>> loader) {
+
+    }
+
+    private static class ImageDownloader
+            extends AsyncTaskLoader<Map<String, Bitmap>> {
+
+        private static final String PHOTOS_BASE_URL =
+                "https://mohammed.ugar-it.com/services/images/";
+        private static List<DataItem> mItemList;
+
+        public ImageDownloader(Context context, List<DataItem> itemList) {
+            super(context);
+            mItemList = itemList;
+        }
+
+        @Override
+        public Map<String, Bitmap> loadInBackground() {
+            //download image files here
+
+            return null;
+        }
+    }
 
 }
