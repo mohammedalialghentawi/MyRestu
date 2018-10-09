@@ -11,6 +11,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.preference.PreferenceManager;
@@ -37,10 +38,14 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +56,8 @@ import mohammed.hiast.edu.sy.myrestu.model.DataItem;
 import mohammed.hiast.edu.sy.myrestu.services.MyService;
 import mohammed.hiast.edu.sy.myrestu.utils.NetworkHelper;
 
-public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Map<String, Bitmap>> {
+public class MainActivity extends AppCompatActivity
+         {
 
     private static final int SIGNIN_REQUEST =1001 ;
     public static final String MY_GLOBAL_PREFS ="My_prefernce" ;
@@ -64,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private RecyclerView recyclerView;
     private boolean permissionGranted;
 
+    //Map<String,Bitmap> mBitmapMap;
     boolean networkOk;
     ListView mDrawerList;
     DrawerLayout mDrawerLayout;
@@ -85,7 +92,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             dataItemList = Arrays.asList(dataItems);
 
+            /*getSupportLoaderManager().initLoader(0,null,MainActivity.this)
+                    .forceLoad();*/
             displayAllData(null);
+
 
 
         }
@@ -153,14 +163,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
 
     private void displayAllData(String category){
-       //List<DataItem> mList = mDataSource.getAllDataItems(category);
+        //List<DataItem> mList = mDataSource.getAllDataItems(category);
 
         if (dataItemList == null) {
             Toast.makeText(this, "Data is null", Toast.LENGTH_SHORT).show();
             return;
         }
-       DataItemAdapter adapter = new DataItemAdapter(this,dataItemList);
-       recyclerView.setAdapter(adapter);
+        DataItemAdapter adapter = new DataItemAdapter(this,
+                dataItemList);
+        recyclerView.setAdapter(adapter);
 
     }
 
@@ -225,21 +236,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     }
 
-    @NonNull
-    @Override
-    public Loader<Map<String, Bitmap>> onCreateLoader(int i, @Nullable Bundle bundle) {
-        return null;
-    }
 
-    @Override
-    public void onLoadFinished(@NonNull Loader<Map<String, Bitmap>> loader, Map<String, Bitmap> stringBitmapMap) {
 
-    }
 
-    @Override
-    public void onLoaderReset(@NonNull Loader<Map<String, Bitmap>> loader) {
 
-    }
+
+
+
+
 
     private static class ImageDownloader
             extends AsyncTaskLoader<Map<String, Bitmap>> {
@@ -257,7 +261,30 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         public Map<String, Bitmap> loadInBackground() {
             //download image files here
 
-            return null;
+            Map<String,Bitmap> bitmapMap = new HashMap<>();
+            for (DataItem item:mItemList) {
+
+                String imageUrl = PHOTOS_BASE_URL + item.getImage();
+
+                InputStream in = null;
+                try {
+                    in = (InputStream)new URL(imageUrl).getContent();
+                    Bitmap bitmap = BitmapFactory.decodeStream(in);
+                    bitmapMap.put(item.getItemName(),bitmap);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if(in!=null)
+                            in.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+
+            return bitmapMap;
         }
     }
 
